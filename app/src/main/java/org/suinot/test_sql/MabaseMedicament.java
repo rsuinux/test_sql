@@ -15,16 +15,17 @@ import java.io.OutputStream;
 
 /**
  * Created by remi on 01/09/16.
+ * Revised 07 oct 2016
  */
 
 class MabaseMedicament extends SQLiteOpenHelper {
 
     private String DATABASE_PATH; // chemin défini dans le constructeur
-    static final String NOM_BDD = "Antalgiques.db";
+    private static final String NOM_BDD = "Antalgiques.db";
 
 
     static final int VERSION_BDD = 1;
-    private MabaseMedicament sInstance;
+    public static MabaseMedicament sInstance;
     private final Context mycontext;
 
     private static final String TABLE_MEDIC = "table_medicaments";
@@ -36,21 +37,26 @@ class MabaseMedicament extends SQLiteOpenHelper {
             + COL_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " + COL_NOM + " TEXT NOT NULL, "
             + COL_DOSE + " TEXT NOT NULL);";
 
+    public static synchronized MabaseMedicament getInstance(Context context) {
+        Log.d ("getInstance", "création de la base");
+
+        if (sInstance == null) {
+            sInstance = new MabaseMedicament (context);
+        }
+        return sInstance;
+    }
+
     // Constructeur
     MabaseMedicament(Context context) {
-
         super (context, NOM_BDD, null, VERSION_BDD);
         this.mycontext = context;
-        File fileBase = mycontext.getDatabasePath (NOM_BDD);
-        String filesDir = fileBase.getPath ();  //  context.getFilesDir ().getPath (); // par defaut: /data/data/com.package.nom/files/
-        DATABASE_PATH = filesDir.substring (0, filesDir.lastIndexOf ("/")) + "/"; // /data/data/com.package.nom/databases/
-        Log.d ("Constructeur: ", "filesDir=" + filesDir);
-        Log.d ("Constuctucteur", "loc. de bdd: " + DATABASE_PATH);
-        Log.d ("Constructeur", "Nom de la base: " + NOM_BDD);
+        String filesDir = context.getFilesDir ().getPath (); // /data/data/com.package.nom/files/
+        DATABASE_PATH = filesDir.substring (0, filesDir.lastIndexOf ("/")) + "/databases/"; // /data/data/com.package.nom/databases/
+        Log.d ("ConstR MabaseMedicament", "création de la base");
+
         // Si la bdd n'existe pas dans le dossier de l'app
         if (!checkdatabase ()) {
             // copy db de 'assets' vers DATABASE_PATH
-            Log.d ("Constructeur", "pas de bdd existante");
             copydatabase ();
         }
     }
@@ -65,57 +71,61 @@ class MabaseMedicament extends SQLiteOpenHelper {
 
     // On copie la base de "assets" vers "/data/data/com.package.nom/databases"
     // ceci est fait au premier lancement de l'application
-    private void copydatabase() {
+    private boolean copydatabase() {
 
         final String outFileName = DATABASE_PATH + NOM_BDD;
         Log.d ("copybase", "outFileName: " + outFileName);
 
-        InputStream myInput ;
-        OutputStream myOutput ;
+        InputStream myInput;
         try {
-
-            //Open your local db as the input stream
+            // Ouvre la bdd de 'assets' en lecture
             myInput = mycontext.getAssets ().open (NOM_BDD);
 
-            //Open the empty db as the output stream
-            myOutput = new FileOutputStream (outFileName);
+            // dossier de destination
+            File pathFile = new File (DATABASE_PATH);
+            if (!pathFile.exists ()) {
+                if (!pathFile.mkdirs ()) {
+                    Toast.makeText (mycontext, "Erreur : copydatabase(), pathFile.mkdirs()", Toast.LENGTH_SHORT).show ();
+                    return false;
+                }
+            }
 
-            // crée le repertoire
-            File f = new File (DATABASE_PATH);
-            f.mkdirs ();
+            // Ouverture en écriture du fichier bdd de destination
+            OutputStream myOutput = new FileOutputStream (outFileName);
 
-            //transfer bytes from the inputfile to the outputfile
+            // transfert de inputfile vers outputfile
             byte[] buffer = new byte[1024];
             int length;
             while ((length = myInput.read (buffer)) > 0) {
                 myOutput.write (buffer, 0, length);
             }
-            Log.d ("copybase", "la base de donnée est recopiée, fermeture des flux");
-            //Close the streams
+
+            // Fermeture
             myOutput.flush ();
             myOutput.close ();
             myInput.close ();
         } catch (IOException e) {
             e.printStackTrace ();
-            Toast.makeText (mycontext, "Erreur : copydatabase()", Toast.LENGTH_LONG).show ();
-            Log.d ("copybase", "erreur sur copydatabase");
+            Toast.makeText (mycontext, "Erreur : copydatabase()", Toast.LENGTH_SHORT).show ();
+            return false;
         }
 
         // on greffe le numéro de version
         try {
-            SQLiteDatabase checkdb = SQLiteDatabase.openDatabase (outFileName, null, SQLiteDatabase.OPEN_READWRITE);
+            SQLiteDatabase checkdb = SQLiteDatabase.openDatabase (DATABASE_PATH + NOM_BDD, null, SQLiteDatabase.OPEN_READWRITE);
             checkdb.setVersion (VERSION_BDD);
         } catch (SQLiteException e) {
             // bdd n'existe pas
-            Toast.makeText (mycontext, "Erreur : " + outFileName + " n'existe pas????", Toast.LENGTH_LONG).show ();
+            return false;
         }
 
+        return true;
     } // copydatabase()
 
     @Override
     public void onCreate(SQLiteDatabase db) {
         //on crée la table à partir de la requête écrite dans la variable CREATE_BDD
-
+        Log.d ("onCreate", "pas de bdd existante");
         db.execSQL (CREATE_BDD);
     }
 

@@ -23,14 +23,14 @@ class GestionBase {
     private static final String COL_DOSE = "DOSE";
     private static final int NUM_COL_DOSE = 2;
 
-    private SQLiteDatabase bdd;
     private MabaseMedicament MaBase;
+    private SQLiteDatabase bdd;
 
 
     public GestionBase(Context context) {
         //On crée la BDD et sa table
         Log.d ("GestionBase()", "création de la base");
-        MaBase = new MabaseMedicament (context);
+        MaBase = MabaseMedicament.getInstance (context);
     }
 
     public void open() {
@@ -39,15 +39,17 @@ class GestionBase {
         bdd = MaBase.getWritableDatabase ();
     }
 
+
     public void close() {
         //on ferme l'accès à la BDD
+        Log.d ("GestionBase()", "close base");
         bdd.close ();
     }
 
-    public SQLiteDatabase getBDD() {
-        Log.d ("getBDD()", "renvoi la bdd");
-        return bdd;
-    }
+//    public SQLiteDatabase getMaBase() {
+//Log.d ("getMaBase()", "renvoi la bdd");
+//        return MaBase;
+//    }
 
     /**
      * Insère un médicament en base de données

@@ -27,6 +27,7 @@ public class MainActivity extends Activity {
     private ListView listViewMedicaments;
     private ArrayList<ListItem> data;
     private long derniere_donnees_initiale;
+
     CustomAdapter monAdapter = null;
 
     @Override
@@ -34,6 +35,8 @@ public class MainActivity extends Activity {
         super.onCreate (savedInstanceState);
 
         setContentView (R.layout.activity_main);
+
+        Log.d ("MainActivity", "avant new gestionbase");
         medicBdd = new GestionBase (this);
         // On ouvre la base de données pour écrire dedans
         Log.d ("MainActivity", "avant openbdd");
@@ -50,10 +53,9 @@ public class MainActivity extends Activity {
         listViewMedicaments = (ListView) findViewById (R.id.affiche_bdd);
         monAdapter = new CustomAdapter (this, R.layout.template_item, this.data);  //instantiation de l'adapter une seule fois
 
-
-        listViewMedicaments.setAdapter ( monAdapter);
+        listViewMedicaments.setAdapter (monAdapter);
         final LayoutInflater inflater = LayoutInflater.from (MainActivity.this);
-        final View dialogView = inflater.inflate (R.layout.nouveau_medic, null );
+        final View dialogView = inflater.inflate (R.layout.nouveau_medic, null);
         // ajout d'un mémdicament
         Button ajouter = (Button) findViewById (R.id.Ajout);
         ajouter.setOnClickListener (new View.OnClickListener () { // Notre classe anonyme
@@ -96,16 +98,17 @@ public class MainActivity extends Activity {
 
         listViewMedicaments.setOnItemClickListener (new AdapterView.OnItemClickListener () {
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                // When clicked, show a toast with the TextView text
+                /*
+                clique court
+                    pour l'instant, juste un toast
+                    Todo: stat sur le nombre d'utilisation du médicament
+                 */
                 Toast.makeText (getApplicationContext (), "Click court: " + parent.getItemAtPosition (position).toString () + "(" + position + ")",
                         Toast.LENGTH_SHORT).show ();
             }
         });
         listViewMedicaments.setOnItemLongClickListener (new AdapterView.OnItemLongClickListener () {
             public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
-                // When clicked, show a toast with the TextView text
-                Toast.makeText (getApplicationContext (), "Click long: " + parent.getItemAtPosition (position).toString () + "(" + position + ")",
-                        Toast.LENGTH_SHORT).show ();
                 /*
                 demande de suppression dans la base de données
                   1/ confirmation avec une boite d'alerte
@@ -167,7 +170,7 @@ public class MainActivity extends Activity {
         }).setNegativeButton ("No", new DialogInterface.OnClickListener () {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                finish ();
+
             }
         });
 
